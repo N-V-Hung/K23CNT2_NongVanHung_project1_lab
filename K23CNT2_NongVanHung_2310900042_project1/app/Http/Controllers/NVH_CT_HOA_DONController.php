@@ -21,13 +21,13 @@ public function show($sanPhamId)
     $sanPham = NVH_SAN_PHAM::find($sanPhamId);
 
     // Lấy Mã Khách Hàng từ session
-    $userId = Session::get('nhtMaKhachHang');
+    $userId = Session::get('nvhMaKhachHang');
 
     // Kiểm tra khách hàng tồn tại trong hệ thống
     $khachHang = NVH_KHACH_HANG::find($userId);
 
     // Truyền thông tin qua view
-    return view('nhtuser.hoadon', [
+    return view('nvhuser.hoadon', [
         'sanPham' => $sanPham,
         'khachHang' => $khachHang, // Truyền thông tin khách hàng vào view
     ]);
@@ -44,40 +44,40 @@ public function show($sanPhamId)
     public function store(Request $request)
     {
         // Lấy Mã Khách Hàng từ session
-        $userId = Session::get('nhtMaKhachHang'); // Lấy ID khách hàng từ session
+        $userId = Session::get('nvhMaKhachHang'); // Lấy ID khách hàng từ session
     
         // Kiểm tra nếu không có khách hàng trong session
         if (!$userId) {
-            return redirect()->route('nhtuser.login')->with('error', 'Vui lòng đăng nhập để tiếp tục!');
+            return redirect()->route('nvhuser.login')->with('error', 'Vui lòng đăng nhập để tiếp tục!');
         }
     
         // Kiểm tra khách hàng tồn tại trong bảng NVH_KHACH_HANG
         $khachhang = NVH_KHACH_HANG::find($userId);
         if (!$khachhang) {
-            return redirect()->route('nhtuser.login')->with('error', 'Khách hàng không tồn tại.');
+            return redirect()->route('nvhuser.login')->with('error', 'Khách hàng không tồn tại.');
         }
     
         // Lấy thông tin sản phẩm từ bảng NVH_SAN_PHAM
-        $sanPham = NVH_SAN_PHAM::find($request->nhtSanPhamId);
+        $sanPham = NVH_SAN_PHAM::find($request->nvhSanPhamId);
         if (!$sanPham) {
             return redirect()->back()->with('error', 'Sản phẩm không tồn tại.');
         }
     
-        // Tạo mã hóa đơn tự động (nhtMaHoaDon)
-        $nhtMaHoaDon = 'HD' . str_pad(rand(1, 9999), 4, '0', STR_PAD_LEFT); // Tạo mã hóa đơn ngẫu nhiên
+        // Tạo mã hóa đơn tự động (nvhMaHoaDon)
+        $nvhMaHoaDon = 'HD' . str_pad(rand(1, 9999), 4, '0', STR_PAD_LEFT); // Tạo mã hóa đơn ngẫu nhiên
     
         // Tạo hóa đơn mới với thông tin lấy từ khách hàng
         $hoaDon = NVH_HOA_DON::create([
-            'nhtMaHoaDon' => $nhtMaHoaDon,
-            'nhtMaKhachHang' => $khachhang->id,  // Sử dụng ID của khách hàng từ bảng NVH_KHACH_HANG
-            'nhtNgayHoaDon' => Carbon::now()->toDateString(),
-            'nhtNgayNhan' => Carbon::now()->addDays(3)->toDateString(),
-            'nhtHoTenKhachHang' => $request->nhtHoTenKhachHang,
-            'nhtEmail' => $request->nhtEmail,
-            'nhtDienThoai' => $request->nhtDienThoai,
-            'nhtDiaChi' => $request->nhtDiaChi,
-            'nhtTongGiaTri' => $sanPham->nhtDonGia * $request->nhtSoLuong, // Tính tổng giá trị
-            'nhtTrangThai' => 0, // 0 nghĩa là chưa thanh toán
+            'nvhMaHoaDon' => $nvhMaHoaDon,
+            'nvhMaKhachHang' => $khachhang->id,  // Sử dụng ID của khách hàng từ bảng NVH_KHACH_HANG
+            'nvhNgayHoaDon' => Carbon::now()->toDateString(),
+            'nvhNgayNhan' => Carbon::now()->addDays(3)->toDateString(),
+            'nvhHoTenKhachHang' => $request->nvhHoTenKhachHang,
+            'nvhEmail' => $request->nvhEmail,
+            'nvhDienThoai' => $request->nvhDienThoai,
+            'nvhDiaChi' => $request->nvhDiaChi,
+            'nvhTongGiaTri' => $sanPham->nvhDonGia * $request->nvhSoLuong, // Tính tổng giá trị
+            'nvhTrangThai' => 0, // 0 nghĩa là chưa thanh toán
         ]);
      
         // Quay lại trang chi tiết hóa đơn vừa tạo
@@ -99,9 +99,9 @@ public function create($hoaDonId, $sanPhamId)
         return redirect()->route('hoadon.index')->with('error', 'Hóa đơn hoặc sản phẩm không tồn tại.');
     }
  // Lấy số lượng từ request
- $soLuong = request('nhtSoLuong', 1); // Số lượng mặc định là 1 nếu không có giá trị
+ $soLuong = request('nvhSoLuong', 1); // Số lượng mặc định là 1 nếu không có giá trị
     // Truyền dữ liệu vào view
-    return view('nhtuser.cthoadon', [
+    return view('nvhuser.cthoadon', [
         'hoaDon' => $hoaDon,
         'sanPham' => $sanPham,
         'soLuong' => $soLuong // Truyền số lượng vào view
@@ -115,12 +115,12 @@ public function cthoadonshow($hoaDonId, $sanPhamId)
     $hoaDon = NVH_HOA_DON::findOrFail($hoaDonId);
 
     // Lấy chi tiết hóa đơn từ ID
-    $chiTietHoaDon = NVH_CT_HOA_DON::where('nhtHoaDonID', $hoaDonId)
-                                    ->where('nhtSanPhamID', $sanPhamId)
+    $chiTietHoaDon = NVH_CT_HOA_DON::where('nvhHoaDonID', $hoaDonId)
+                                    ->where('nvhSanPhamID', $sanPhamId)
                                     ->firstOrFail();
 
     // Trả về view và truyền dữ liệu
-    return view('nhtuser.cthoadonshow', compact('hoaDon', 'chiTietHoaDon'));
+    return view('nvhuser.cthoadonshow', compact('hoaDon', 'chiTietHoaDon'));
 }
 
 
@@ -131,14 +131,14 @@ public function cthoadonshow($hoaDonId, $sanPhamId)
     {
         // Validate các dữ liệu yêu cầu
         $validated = $request->validate([
-            'nhtSanPhamID' => 'required|exists:NVH_SAN_PHAM,id',
-            'nhtHoaDonID' => 'required|exists:NVH_HOA_DON,id',
-            'nhtSoLuong' => 'required|integer|min:1',
+            'nvhSanPhamID' => 'required|exists:NVH_SAN_PHAM,id',
+            'nvhHoaDonID' => 'required|exists:NVH_HOA_DON,id',
+            'nvhSoLuong' => 'required|integer|min:1',
         ]);
     
         // Lấy thông tin sản phẩm và hóa đơn
-        $sanPham = NVH_SAN_PHAM::find($request->nhtSanPhamID);
-        $hoaDon = NVH_HOA_DON::find($request->nhtHoaDonID);
+        $sanPham = NVH_SAN_PHAM::find($request->nvhSanPhamID);
+        $hoaDon = NVH_HOA_DON::find($request->nvhHoaDonID);
     
         // Kiểm tra xem sản phẩm và hóa đơn có tồn tại không
         if (!$sanPham || !$hoaDon) {
@@ -146,27 +146,27 @@ public function cthoadonshow($hoaDonId, $sanPhamId)
         }
     
         // Kiểm tra xem chi tiết hóa đơn đã tồn tại chưa
-        $chiTietHoaDon = NVH_CT_HOA_DON::where('nhtHoaDonID', $hoaDon->id)
-                                        ->where('nhtSanPhamID', $sanPham->id)
+        $chiTietHoaDon = NVH_CT_HOA_DON::where('nvhHoaDonID', $hoaDon->id)
+                                        ->where('nvhSanPhamID', $sanPham->id)
                                         ->first();
     
         // Nếu chi tiết hóa đơn đã tồn tại, cập nhật số lượng và tính lại thành tiền
         if ($chiTietHoaDon) {
             // Cập nhật số lượng và tính lại tổng thành tiền
-            $chiTietHoaDon->nhtSoLuongMua += $request->nhtSoLuong;  // Tăng số lượng
-            $chiTietHoaDon->nhtThanhTien = $chiTietHoaDon->nhtSoLuongMua * $sanPham->nhtDonGia; // Tính lại thành tiền
+            $chiTietHoaDon->nvhSoLuongMua += $request->nvhSoLuong;  // Tăng số lượng
+            $chiTietHoaDon->nvhThanvhien = $chiTietHoaDon->nvhSoLuongMua * $sanPham->nvhDonGia; // Tính lại thành tiền
             $chiTietHoaDon->save(); // Lưu cập nhật
         } else {
             // Nếu không tồn tại chi tiết hóa đơn, tạo mới chi tiết hóa đơn
-            $nhtThanhTien = $request->nhtSoLuong * $sanPham->nhtDonGia;
+            $nvhThanvhien = $request->nvhSoLuong * $sanPham->nvhDonGia;
     
             NVH_CT_HOA_DON::create([
-                'nhtHoaDonID' => $hoaDon->id, // ID hóa đơn
-                'nhtSanPhamID' => $sanPham->id, // ID sản phẩm
-                'nhtSoLuongMua' => $request->nhtSoLuong, // Số lượng mua
-                'nhtDonGiaMua' => $sanPham->nhtDonGia, // Đơn giá của sản phẩm
-                'nhtThanhTien' => $nhtThanhTien, // Tổng thành tiền
-                'nhtTrangThai' => 1,  // Trạng thái đơn hàng đã xác nhận
+                'nvhHoaDonID' => $hoaDon->id, // ID hóa đơn
+                'nvhSanPhamID' => $sanPham->id, // ID sản phẩm
+                'nvhSoLuongMua' => $request->nvhSoLuong, // Số lượng mua
+                'nvhDonGiaMua' => $sanPham->nvhDonGia, // Đơn giá của sản phẩm
+                'nvhThanvhien' => $nvhThanvhien, // Tổng thành tiền
+                'nvhTrangThai' => 1,  // Trạng thái đơn hàng đã xác nhận
             ]);
         }
     
@@ -183,7 +183,7 @@ public function cthoadonshow($hoaDonId, $sanPhamId)
     
   // thanh toán
  // Hiển thị sản phẩm khi nhấn vào "Mua"
- public function nhtthanhtoan($product_id)
+ public function nvhthanvhoan($product_id)
  {
      // Lấy sản phẩm theo ID sử dụng model
      $sanPham = NVH_SAN_PHAM::find($product_id);
@@ -194,11 +194,11 @@ public function cthoadonshow($hoaDonId, $sanPhamId)
      }
 
      // Trả về view với thông tin sản phẩm
-     return view('nhtuser.thanhtoan', compact('sanPham'));
+     return view('nvhuser.thanvhoan', compact('sanPham'));
  }
 
- // Lưu thông tin thanh toán (chỉ cần lưu vào bảng thanh toán nếu cần, ở đây ta không tạo bảng ThanhToan)
- public function storeThanhtoan(Request $request)
+ // Lưu thông tin thanh toán (chỉ cần lưu vào bảng thanh toán nếu cần, ở đây ta không tạo bảng Thanvhoan)
+ public function storeThanvhoan(Request $request)
  {
      // Lấy thông tin sản phẩm từ model SanPham
      $sanPham = NVH_SAN_PHAM::find($request->product_id);
@@ -209,133 +209,133 @@ public function cthoadonshow($hoaDonId, $sanPhamId)
      }
 
      // Tính tổng tiền thanh toán
-     $tongTien = $request->nhtSoLuong * $sanPham->nhtDonGia;
+     $tongTien = $request->nvhSoLuong * $sanPham->nvhDonGia;
 
      // Nếu muốn lưu vào bảng thanh toán, bạn có thể thêm logic ở đây.
      // Nhưng ở đây chỉ cần hiển thị thông tin và tính tổng tiền.
 
-     return view('nhtuser.thanhtoan', [
+     return view('nvhuser.thanvhoan', [
          'sanPham' => $sanPham,
-         'nhtSoLuong' => $request->nhtSoLuong,
+         'nvhSoLuong' => $request->nvhSoLuong,
          'tongTien' => $tongTien
      ]);
  }
 
       //admin CRUD
     // list -----------------------------------------------------------------------------------------------------------------------------------------
-    public function nhtList()
+    public function nvhList()
     {
-        $nhtcthoadons = NVH_CT_HOA_DON::all();
-        return view('nhtAdmins.nhtcthoadon.nht-list',['nhtcthoadons'=>$nhtcthoadons]);
+        $nvhcthoadons = NVH_CT_HOA_DON::all();
+        return view('nvhAdmins.nvhcthoadon.nvh-list',['nvhcthoadons'=>$nvhcthoadons]);
     }
     // detail -----------------------------------------------------------------------------------------------------------------------------------------
-    public function nhtDetail($id)
+    public function nvhDetail($id)
     {
         // Tìm sản phẩm theo ID
-        $nhtcthoadon = NVH_CT_HOA_DON::where('id', $id)->first();
+        $nvhcthoadon = NVH_CT_HOA_DON::where('id', $id)->first();
 
         // Trả về view và truyền thông tin sản phẩm
-        return view('nhtAdmins.nhtcthoadon.nht-detail', ['nhtcthoadon' => $nhtcthoadon]);
+        return view('nvhAdmins.nvhcthoadon.nvh-detail', ['nvhcthoadon' => $nvhcthoadon]);
     }
 
      // create-----------------------------------------------------------------------------------------------------------------------------------------
-     public function nhtCreate()
+     public function nvhCreate()
      {
-         $nhthoadon = NVH_HOA_DON::all();
-         $nhtsanpham = NVH_SAN_PHAM::all();
-         return view('nhtAdmins.nhtcthoadon.nht-create',['nhthoadon'=>$nhthoadon,'nhtsanpham'=>$nhtsanpham]);
+         $nvhhoadon = NVH_HOA_DON::all();
+         $nvhsanpham = NVH_SAN_PHAM::all();
+         return view('nvhAdmins.nvhcthoadon.nvh-create',['nvhhoadon'=>$nvhhoadon,'nvhsanpham'=>$nvhsanpham]);
      }
      //post-----------------------------------------------------------------------------------------------------------------------------------------
-     public function nhtCreateSubmit(Request $request)
+     public function nvhCreateSubmit(Request $request)
      {
          // Xác thực dữ liệu yêu cầu dựa trên các quy tắc xác thực
          $validate = $request->validate([
-             'nhtHoaDonID' => 'required|exists:NVH_hoa_don,id',
-             'nhtSanPhamID' => 'required|exists:NVH_san_pham,id',
-             'nhtSoLuongMua' => 'required|numeric',  
-             'nhtDonGiaMua' => 'required|numeric',
-             'nhtThanhTien' => 'required|numeric',  
-             'nhtTrangThai' => 'required|in:0,1,2',
+             'nvhHoaDonID' => 'required|exists:NVH_hoa_don,id',
+             'nvhSanPhamID' => 'required|exists:NVH_san_pham,id',
+             'nvhSoLuongMua' => 'required|numeric',  
+             'nvhDonGiaMua' => 'required|numeric',
+             'nvhThanvhien' => 'required|numeric',  
+             'nvhTrangThai' => 'required|in:0,1,2',
          ]);
      
          // Tạo một bản ghi hóa đơn mới
-         $nhtcthoadon = new NVH_CT_HOA_DON;
+         $nvhcthoadon = new NVH_CT_HOA_DON;
      
          // Gán dữ liệu xác thực vào các thuộc tính của mô hình
-         $nhtcthoadon->nhtHoaDonID = $request->nhtHoaDonID;
-         $nhtcthoadon->nhtSanPhamID = $request->nhtSanPhamID;  
-         $nhtcthoadon->nhtSoLuongMua = $request->nhtSoLuongMua;
-         $nhtcthoadon->nhtDonGiaMua = $request->nhtDonGiaMua;
-         $nhtcthoadon->nhtThanhTien = $request->nhtThanhTien;
-         $nhtcthoadon->nhtTrangThai = $request->nhtTrangThai;
+         $nvhcthoadon->nvhHoaDonID = $request->nvhHoaDonID;
+         $nvhcthoadon->nvhSanPhamID = $request->nvhSanPhamID;  
+         $nvhcthoadon->nvhSoLuongMua = $request->nvhSoLuongMua;
+         $nvhcthoadon->nvhDonGiaMua = $request->nvhDonGiaMua;
+         $nvhcthoadon->nvhThanvhien = $request->nvhThanvhien;
+         $nvhcthoadon->nvhTrangThai = $request->nvhTrangThai;
      
         
      
          // Lưu bản ghi mới vào cơ sở dữ liệu
-         $nhtcthoadon->save();
+         $nvhcthoadon->save();
      
          // Chuyển hướng đến danh sách hóa đơn
-         return redirect()->route('nhtadmins.nhtcthoadon');
+         return redirect()->route('nvhadmins.nvhcthoadon');
      }
 
       // edit-----------------------------------------------------------------------------------------------------------------------------------------
-      public function nhtEdit($id)
+      public function nvhEdit($id)
 {
-    $nhthoadon = NVH_HOA_DON::all(); // Lấy tất cả các hóa đơn
-    $nhtsanpham = NVH_SAN_PHAM::all(); // Lấy tất cả các sản phẩm
+    $nvhhoadon = NVH_HOA_DON::all(); // Lấy tất cả các hóa đơn
+    $nvhsanpham = NVH_SAN_PHAM::all(); // Lấy tất cả các sản phẩm
 
     // Lấy chi tiết hóa đơn cần chỉnh sửa
-    $nhtcthoadon = NVH_CT_HOA_DON::where('id', $id)->first();
+    $nvhcthoadon = NVH_CT_HOA_DON::where('id', $id)->first();
 
-    if (!$nhtcthoadon) {
+    if (!$nvhcthoadon) {
         // Nếu không tìm thấy chi tiết hóa đơn, chuyển hướng với thông báo lỗi
-        return redirect()->route('nhtadmins.nhtcthoadon')->with('error', 'Không tìm thấy chi tiết hóa đơn!');
+        return redirect()->route('nvhadmins.nvhcthoadon')->with('error', 'Không tìm thấy chi tiết hóa đơn!');
     }
 
     // Trả về view với dữ liệu
-    return view('nhtAdmins.nhtcthoadon.nht-edit', [
-        'nhthoadon' => $nhthoadon,
-        'nhtsanpham' => $nhtsanpham,
-        'nhtcthoadon' => $nhtcthoadon
+    return view('nvhAdmins.nvhcthoadon.nvh-edit', [
+        'nvhhoadon' => $nvhhoadon,
+        'nvhsanpham' => $nvhsanpham,
+        'nvhcthoadon' => $nvhcthoadon
     ]);
 }
 
       //post-----------------------------------------------------------------------------------------------------------------------------------------
-      public function nhtEditSubmit(Request $request,$id)
+      public function nvhEditSubmit(Request $request,$id)
       {
           // Xác thực dữ liệu yêu cầu dựa trên các quy tắc xác thực
           $validate = $request->validate([
-              'nhtHoaDonID' => 'required|exists:NVH_hoa_don,id',
-              'nhtSanPhamID' => 'required|exists:NVH_san_pham,id',
-              'nhtSoLuongMua' => 'required|numeric',  
-              'nhtDonGiaMua' => 'required|numeric',
-              'nhtThanhTien' => 'required|numeric',  
-              'nhtTrangThai' => 'required|in:0,1,2',
+              'nvhHoaDonID' => 'required|exists:NVH_hoa_don,id',
+              'nvhSanPhamID' => 'required|exists:NVH_san_pham,id',
+              'nvhSoLuongMua' => 'required|numeric',  
+              'nvhDonGiaMua' => 'required|numeric',
+              'nvhThanvhien' => 'required|numeric',  
+              'nvhTrangThai' => 'required|in:0,1,2',
           ]);
          
       
           // Tạo một bản ghi hóa đơn mới
-          $nhtcthoadon = NVH_CT_HOA_DON::where('id', $id)->first();
+          $nvhcthoadon = NVH_CT_HOA_DON::where('id', $id)->first();
       
           // Gán dữ liệu xác thực vào các thuộc tính của mô hình
-          $nhtcthoadon->nhtHoaDonID = $request->nhtHoaDonID;
-          $nhtcthoadon->nhtSanPhamID = $request->nhtSanPhamID;  
-          $nhtcthoadon->nhtSoLuongMua = $request->nhtSoLuongMua;
-          $nhtcthoadon->nhtDonGiaMua = $request->nhtDonGiaMua;
-          $nhtcthoadon->nhtThanhTien = $request->nhtThanhTien;
-          $nhtcthoadon->nhtTrangThai = $request->nhtTrangThai;
+          $nvhcthoadon->nvhHoaDonID = $request->nvhHoaDonID;
+          $nvhcthoadon->nvhSanPhamID = $request->nvhSanPhamID;  
+          $nvhcthoadon->nvhSoLuongMua = $request->nvhSoLuongMua;
+          $nvhcthoadon->nvhDonGiaMua = $request->nvhDonGiaMua;
+          $nvhcthoadon->nvhThanvhien = $request->nvhThanvhien;
+          $nvhcthoadon->nvhTrangThai = $request->nvhTrangThai;
       
          
       
           // Lưu bản ghi mới vào cơ sở dữ liệu
-          $nhtcthoadon->save();
+          $nvhcthoadon->save();
       
           // Chuyển hướng đến danh sách hóa đơn
-          return redirect()->route('nhtadmins.nhtcthoadon');
+          return redirect()->route('nvhadmins.nvhcthoadon');
       }
 
         //delete
-        public function nhtDelete($id)
+        public function nvhDelete($id)
         {
             NVH_CT_HOA_DON::where('id',$id)->delete();
             return back()->with('cthoadon_deleted','Đã xóa Khách hàng thành công!');
